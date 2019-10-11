@@ -38,8 +38,8 @@ function get_from_colon()
 # displays the commands, and it is useful for implementing unit tests.
 #
 # @flag: Expecting a flag, that could be SILENT, COMPLAIN, WARNING, SUCCESS,
-#   and TEST_MODE. By default, cmd_manager does not expects flags and always
-#   show the command.
+#        TEST_MODE, and HIGHLIGHT_CMD. By default, cmd_manager does not expects
+#        flags and always show the command.
 # @@: Target command
 #
 # Returns:
@@ -64,6 +64,10 @@ function cmd_manager()
     SUCCESS)
       shift 1
       success "$@"
+      ;;
+    HIGHLIGHT_CMD)
+      shift 1
+      warning "$@"
       ;;
     TEST_MODE)
       shift 1
