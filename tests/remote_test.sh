@@ -10,6 +10,7 @@ function suite
   suite_addTest "cmd_remote_Test"
   suite_addTest "cp_host2remote_Test"
   suite_addTest "which_distro_Test"
+  suite_addTest "preapre_host_deploy_dir_Test"
 }
 
 function setupRemote()
@@ -151,6 +152,33 @@ function which_distro_Test
   output=$(which_distro "" "" "" "$flag")
   expected_command="ssh -p 22 root@localhost \"$cmd\""
   assertEquals "Command did not match ($ID)" "$expected_command" "$output"
+}
+
+function preapre_host_deploy_dir_Test
+{
+  local ID
+
+  setupRemote
+
+  prepare_host_deploy_dir
+
+  ID=1
+  assertTrue "$ID - Check if kw dir was created" '[[ -d $kw_dir ]]'
+
+  ID=2
+  assertTrue "$ID - Check if kw dir was created" '[[ -d $kw_dir/$LOCAL_REMOTE_DIR ]]'
+
+  ID=3
+  assertTrue "$ID - Check if kw dir was created" '[[ -d $kw_dir/$LOCAL_TO_DEPLOY_DIR ]]'
+
+  ID=4
+  unset kw_dir
+
+  output=$(prepare_host_deploy_dir)
+  ret=$?
+  assertEquals "$ID - Expected an error" "22" "$ret"
+
+  tearDownRemote
 }
 
 invoke_shunit

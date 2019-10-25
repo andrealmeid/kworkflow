@@ -3,6 +3,7 @@
 # Set required variables
 EASY_KERNEL_WORKFLOW=${EASY_KERNEL_WORKFLOW:-"kw"}
 src_script_path=${src_script_path:-"$HOME/.config/$EASY_KERNEL_WORKFLOW/src"}
+plugins_path=${plugins_path:-"$HOME/.config/$EASY_KERNEL_WORKFLOW/src/plugins"}
 external_script_path=${external_script_path:-"$HOME/.config/$EASY_KERNEL_WORKFLOW/external"}
 etc_files_path=${etc_files_path:-"$HOME/.config/$EASY_KERNEL_WORKFLOW/etc"}
 config_files_path=${config_files_path:-"$HOME/.config/$EASY_KERNEL_WORKFLOW"}
@@ -71,23 +72,23 @@ function kw()
         return $ret
       )
       ;;
-    install|i)
+    modinstall|i)
       (
         . $src_script_path/mk.sh --source-only
 
-        mk_install
+        modules_install $@
         local ret=$?
-        alert_completion "kw install" "$1"
+        alert_completion "kw modinstall" "$1"
         return $ret
       )
       ;;
-    new|n)
+    deploy|d)
       (
         . $src_script_path/mk.sh --source-only
 
-        vm_new_release_deploy
+        kernel_deploy $@
         local ret=$?
-        alert_completion "kw new" "$1"
+        alert_completion "kw deploy" "$1"
         return $ret
       )
       ;;
@@ -95,7 +96,7 @@ function kw()
       (
         . $src_script_path/mk.sh --source-only
 
-        mk_build && mk_install
+        mk_build && modules_install $@
         local ret=$?
         alert_completion "kw bi" "$1"
         return $ret

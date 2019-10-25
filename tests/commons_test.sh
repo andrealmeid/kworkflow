@@ -54,6 +54,7 @@ function testDefaultConfigFile
       [alert]="n"
       [sound_alert_command]="paplay INSTALLPATH/sounds/complete.wav &"
       [visual_alert_command]="notify-send -i checkbox -t 10000 \"kw\" \"Command: \\\\\"\$COMMAND\\\\\" completed!\""
+      [default_deploy_target]="vm"
     )
 
     parse_configuration $path_repo/etc/kworkflow.config
@@ -86,6 +87,7 @@ function testLocalConfigFile
       [ssh_ip]="127.0.0.1"
       [ssh_port]="3333"
       [mount_point]="/home/lala"
+      [default_deploy_target]="vm"
     )
 
     cp tests/samples/kworkflow.config tests/.tmp_commons_test/

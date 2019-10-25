@@ -106,3 +106,90 @@ function which_distro()
 
   cmd_remotely "$cmd" "$flag" "$remote" "$port" "$user"
 }
+
+# Kw can deploy a new kernel image or modules (or both) in a target machine
+# based on a Linux repository; however, we need a place for adding the
+# intermediaries archives that we will send to a remote device. This function
+# prepares such a directory.
+function prepare_host_deploy_dir()
+{
+  if [[ -z "$kw_dir" ]]; then
+    complain "\$kw_dir isn't set. The kw directory at home may not exist"
+    return 22
+  fi
+
+  # We should expect the setup.sh script create the directory $HOME/kw.
+  # However, does not hurt check for it and create in any case
+  if [[ ! -d "$kw_dir" ]]; then
+    mkdir "$kw_dir"
+  fi
+
+  if [[ ! -d "$kw_dir/$LOCAL_REMOTE_DIR" ]]; then
+    mkdir "$kw_dir/$LOCAL_REMOTE_DIR"
+  fi
+
+  if [[ ! -d "$kw_dir/$LOCAL_TO_DEPLOY_DIR" ]]; then
+    mkdir "$kw_dir/$LOCAL_TO_DEPLOY_DIR"
+  fi
+}
+
+# To deploy a new kernel or module, we have to prepare a directory in the
+# remote machine that will accommodate a set of files that we need to update
+# the kernel. This function checks if we support the target distribution and
+# finally prepared the remote machine for receiving the new kernel. Finally, it
+# creates a "/root/kw_deploy" directory inside the remote machine and prepare
+# it for deploy.
+#
+# @remote IP address of the target machine
+# @port Destination for sending the file
+# @user User in the host machine. Default value is "root"
+# @flag How to display a command, default is SILENT
+function prepare_remote_dir()
+{
+  local remote=$1
+  local port=$2
+  local user=$3
+  local flag=$4
+  local kw_deploy_cmd="mkdir -p $REMOTE_KW_DEPLOY"
+
+  distro_info=$(which_distro "$remote" "$port" "$user")
+  distro=$(detect_distro "/" "$distro_info")
+
+  if [[ $distro =~ "none" ]]; then
+    complain "Unfortunately, there's no support for the target distro"
+    exit 95 # ENOTSUP
+  fi
+
+  cmd_remotely "$kw_deploy_cmd" "$flag" "$remote" "$port" "$user"
+
+  # Send the specific deploy script as a root
+  cp_host2remote "$plugins_path/kernel_install/$distro.sh" \
+                 "$DISTRO_DEPLOY_SCRIPT" "$remote" "$port" "$user" "$flag"
+  cp_host2remote "$DEPLOY_SCRIPT" "$REMOTE_KW_DEPLOY/" "$remote" "$port" \
+                 "$user" "$flag"
+}
+
+# This function generates a tarball file to be sent to the target machine.
+# Notice that we rely on the directory "~/kw/remote".
+#
+# @files_path Point to the directory with the modules files to be deployed.
+# @kernel_release Kernel release name
+function generate_tarball()
+{
+  local files_path=$1
+  local kernel_release=$2
+  local tarball_name=""
+  local ret
+
+  files_path=${files_path:-"$kw_dir/$LOCAL_REMOTE_DIR/lib/modules/"}
+  kernel_release=${kernel_release:-"no_release"}
+  tarball_name="$kernel_release.tar"
+
+  tar -C $files_path -cf $kw_dir/$LOCAL_TO_DEPLOY_DIR/$tarball_name "$kernel_release"
+  ret=$?
+
+  if [[ "$ret" != 0 ]]; then
+    complain "Error archiving modules."
+    exit $ret
+  fi
+}
